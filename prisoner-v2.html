@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Prisoners and cycles of S_n</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,400;0,600;1,400&family=Public+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#F2F5F8; --panel:#FFFFFF; --ink:#1B2631; --muted:#5D6D7E; --rule:#D3DBE3;
+  --ok1:#1F7A6D; --ok2:#4FA394; --ok3:#8CC7BC; --ok4:#BFE0D9;
+  --f8:#8E1B2A; --f7:#B8323B; --f6:#D0615F; --f5:#E3918A;
+  --hi:#2F4DA8; --hiSoft:#E3E9F7; --rowHover:#EEF2F6;
+  --serif:"Spectral", Georgia, "Times New Roman", serif;
+  --sans:"Public Sans", "Segoe UI", Helvetica, Arial, sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#131A21; --panel:#1B242D; --ink:#E6ECF1; --muted:#9AA9B7; --rule:#33414E;
+    --ok1:#5CC2B1; --ok2:#3F9C8D; --ok3:#2E7569; --ok4:#24574F;
+    --f8:#F08A93; --f7:#E26D76; --f6:#C4555E; --f5:#9C4249;
+    --hi:#8FA8F0; --hiSoft:#26324D; --rowHover:#222D38;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#131A21; --panel:#1B242D; --ink:#E6ECF1; --muted:#9AA9B7; --rule:#33414E;
+  --ok1:#5CC2B1; --ok2:#3F9C8D; --ok3:#2E7569; --ok4:#24574F;
+  --f8:#F08A93; --f7:#E26D76; --f6:#C4555E; --f5:#9C4249;
+  --hi:#8FA8F0; --hiSoft:#26324D; --rowHover:#222D38;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.5}
+main{max-width:1240px;margin:0 auto;padding:28px 20px 60px}
+h1{font-family:var(--serif);font-weight:600;font-size:clamp(1.7rem,3.4vw,2.5rem);line-height:1.15;margin:0 0 10px}
+h2{font-family:var(--serif);font-weight:600;font-size:1.35rem;margin:0 0 8px}
+p{margin:0 0 10px;max-width:74ch}
+.lede{font-family:var(--serif);font-size:1.12rem;line-height:1.6;color:var(--ink)}
+.math{font-family:var(--serif);font-style:italic}
+.num{font-variant-numeric:tabular-nums}
+section{margin-top:34px}
+.panel{background:var(--panel);border:1px solid var(--rule);border-radius:6px;padding:18px}
+
+/* hero bar */
+.barwrap{margin-top:22px}
+.bar{display:flex;height:74px;gap:1px;border-radius:4px;overflow:hidden;background:var(--rule)}
+.seg{border:0;padding:0;margin:0;cursor:pointer;min-width:1px;position:relative;transition:filter .15s}
+.seg:hover,.seg:focus-visible{filter:brightness(1.12);outline:none}
+.seg.sel{box-shadow:inset 0 0 0 3px var(--ink)}
+.barlabels{display:flex;justify-content:space-between;gap:16px;margin-top:10px;flex-wrap:wrap}
+.big{font-family:var(--serif);font-size:1.6rem;font-weight:600}
+.fail .big{color:var(--f7)} .ok .big{color:var(--ok1)}
+.ok{text-align:right}
+.tip{min-height:1.5em;color:var(--muted);margin-top:4px}
+.legend{display:flex;flex-wrap:wrap;gap:14px;margin-top:8px;color:var(--muted);font-size:.9rem}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.sw{width:14px;height:14px;border-radius:2px;display:inline-block}
+
+/* tables */
+.two{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+@media (max-width:900px){.two{grid-template-columns:1fr}}
+.scroll{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums}
+th,td{padding:6px 10px;text-align:right;border-bottom:1px solid var(--rule);white-space:nowrap}
+th{font-weight:600;color:var(--muted);font-size:.85rem}
+th:first-child,td:first-child{text-align:left}
+tbody tr.click{cursor:pointer}
+tbody tr.click:hover{background:var(--rowHover)}
+tbody tr.sel{background:var(--hiSoft)}
+tr.sub td{color:var(--muted);font-size:.88rem;border-bottom-style:dotted}
+tr.sub td:first-child{padding-left:26px}
+tfoot td{font-weight:600;border-bottom:0;border-top:2px solid var(--ink)}
+.chip{display:inline-block;padding:1px 8px;border-radius:10px;font-size:.82rem;font-weight:500}
+.chip.okc{background:var(--ok4);color:var(--ink)}
+.chip.failc{background:var(--f5);color:#fff}
+:root[data-theme="dark"] .chip.failc{color:var(--ink)}
+.dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px;vertical-align:middle}
+
+/* browser */
+.browser{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:20px;align-items:start}
+@media (max-width:980px){.browser{grid-template-columns:1fr}}
+.controls{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:12px}
+select,input,button{font:inherit;color:var(--ink)}
+select,input{background:var(--panel);border:1px solid var(--rule);border-radius:4px;padding:5px 8px}
+button.btn{background:var(--panel);border:1px solid var(--rule);border-radius:4px;padding:5px 11px;cursor:pointer}
+button.btn:hover{border-color:var(--hi)}
+button.btn:disabled{opacity:.45;cursor:default}
+button.primary{background:var(--hi);border-color:var(--hi);color:#fff}
+:root[data-theme="dark"] button.primary{color:var(--bg)}
+:focus-visible{outline:2px solid var(--hi);outline-offset:2px}
+#permTable td.cyc{text-align:left;font-family:var(--serif)}
+#permTable td.one{letter-spacing:.12em}
+.cycL{color:var(--f7);font-weight:600}
+.pager{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:10px;color:var(--muted)}
+.pager input{width:72px}
+.err{color:var(--f7);font-size:.9rem}
+.sticky{position:sticky;top:12px}
+@media (max-width:980px){.sticky{position:static}}
+#graph{width:100%;height:auto;display:block}
+.drawers{display:grid;grid-template-columns:repeat(8,1fr);gap:6px;margin:12px 0}
+.drawer{border:1px solid var(--rule);border-radius:4px;text-align:center;padding:6px 2px;font-variant-numeric:tabular-nums;position:relative}
+.drawer .dl{font-size:.72rem;color:var(--muted)}
+.drawer .sl{font-family:var(--serif);font-size:1.25rem;font-weight:600;visibility:hidden}
+.drawer.open .sl{visibility:visible}
+.drawer.open{border-color:var(--hi);background:var(--hiSoft)}
+.drawer.late{border-color:var(--f7)}
+.drawer.found .sl{color:var(--ok1)}
+.drawer .ord{position:absolute;top:-8px;right:-6px;background:var(--hi);color:#fff;border-radius:9px;font-size:.7rem;min-width:18px;padding:0 4px}
+.drawer.late .ord{background:var(--f7)}
+.prisoners{display:flex;gap:6px;flex-wrap:wrap}
+.prisoners button{width:36px}
+.prisoners button.sel{background:var(--hi);color:#fff;border-color:var(--hi)}
+.log{font-size:.92rem;margin-top:8px;min-height:3em}
+.log .verdict{font-weight:600}
+.small{font-size:.88rem;color:var(--muted)}
+@media (prefers-reduced-motion: reduce){*{transition:none!important}}
+
+/* n selector */
+.nsel{display:flex;flex-wrap:wrap;gap:10px;align-items:stretch;margin-top:18px}
+.ncard{display:flex;flex-direction:column;align-items:flex-start;gap:1px;min-width:150px;padding:10px 14px;border:1px solid var(--rule);border-radius:6px;background:var(--panel);color:var(--ink);cursor:pointer;text-align:left;font:inherit}
+.ncard:hover{border-color:var(--hi)}
+.ncard.sel{border:2px solid var(--hi);background:var(--hiSoft);padding:9px 13px}
+.nlab{font-family:var(--serif);font-size:1.3rem;font-weight:600;line-height:1.2}
+.nsub{font-size:.82rem;color:var(--muted)}
+.nprob{font-variant-numeric:tabular-nums;font-size:.92rem;margin-top:3px}
+.nlimit{align-self:center;color:var(--muted);font-size:.9rem;padding-left:6px}
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1 id="h1">n prisoners</h1>
+    <p class="lede" id="lede"></p>
+  </header>
+
+  <div class="nsel" id="nsel" role="radiogroup" aria-label="Number of prisoners"></div>
+
+  <div class="barwrap">
+    <div class="bar" id="bar" role="group" aria-label="All permutations by cycle type"></div>
+    <div class="tip" id="tip">Hover a block to see its cycle type. Click it to list those permutations.</div>
+    <div class="barlabels">
+      <div class="fail"><div class="big num" id="failBig"></div><div id="failTxt"></div></div>
+      <div class="ok"><div class="big num" id="okBig"></div><div id="okTxt"></div></div>
+    </div>
+    <div class="legend" id="legend"></div>
+  </div>
+
+  <section class="two">
+    <div class="panel">
+      <h2 id="LHead"></h2>
+      <p class="small" id="LNote"></p>
+      <div class="scroll"><table id="Ltable"></table></div>
+    </div>
+    <div class="panel">
+      <h2 id="THead"></h2>
+      <p class="small">Class size = <span id="nfact"></span>/z<sub>λ</sub>, with z<sub>λ</sub> = ∏ i<sup>m<sub>i</sub></sup> m<sub>i</sub>!, where m<sub>i</sub> is the number of i-cycles.</p>
+      <div class="scroll"><table id="Ttable"></table></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Every permutation, with its cycles</h2>
+    <p class="small" id="browseNote"></p>
+    <div class="browser">
+      <div class="panel">
+        <div class="controls">
+          <label for="filter">Show</label>
+          <select id="filter"></select>
+          <input id="search" aria-label="Find a permutation" size="24">
+          <button class="btn" id="go">Find</button>
+          <button class="btn" id="rand">Random</button>
+        </div>
+        <div class="err" id="err"></div>
+        <div class="scroll">
+          <table id="permTable">
+            <thead><tr><th>#</th><th id="oneHead"></th><th>cycles</th><th>longest</th><th>outcome</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+        <div class="pager">
+          <button class="btn" id="first" aria-label="First page">«</button>
+          <button class="btn" id="prev" aria-label="Previous page">‹</button>
+          <span>Page</span><input id="pageIn" type="number" min="1" aria-label="Page number"><span id="pageOf"></span>
+          <button class="btn" id="next" aria-label="Next page">›</button>
+          <button class="btn" id="last" aria-label="Last page">»</button>
+          <span id="showing" class="num"></span>
+        </div>
+      </div>
+
+      <div class="panel sticky" id="detail">
+        <h2 id="dTitle">Graph of π</h2>
+        <div class="small" id="dSub"></div>
+        <svg id="graph" viewBox="0 0 520 260" aria-label="Cycle graph"></svg>
+        <div class="small" id="graphNote"></div>
+        <h2 style="margin-top:16px">Walk a prisoner</h2>
+        <div class="prisoners" id="prisoners"></div>
+        <div class="drawers" id="drawers"></div>
+        <div class="controls">
+          <button class="btn" id="stepBtn">Open next drawer</button>
+          <button class="btn" id="playBtn">Play walk</button>
+          <button class="btn" id="resetBtn">Close all</button>
+        </div>
+        <div class="log" id="log"></div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<script>
+(function(){
+const NS=[2,4,6,8];
+const fact=[1]; for(let i=1;i<=8;i++) fact[i]=fact[i-1]*i;
+const binom=(n,k)=>fact[n]/(fact[k]*fact[n-k]);
+const fmt=x=>x.toLocaleString('en-US');
+const gcd=(a,b)=>b?gcd(b,a%b):a;
+const frac=(a,b)=>{ const g=gcd(a,b); return (a/g)+'/'+(b/g); };
+const SUB='₀₁₂₃₄₅₆₇₈₉'; const sub=k=>String(k).split('').map(c=>SUB[+c]).join('');
+const $=id=>document.getElementById(id);
+
+/* ---------- per-n data ---------- */
+let N,HALF,TOTAL,P,typeOf,longest,types,typeByKey,filters,barOrder,cache;
+
+function partitions(n,max){ if(n===0) return [[]]; const out=[];
+  for(let k=Math.min(n,max);k>=1;k--) for(const p of partitions(n-k,k)) out.push([k,...p]); return out; }
+
+function successCount(n){ let fail=0; for(let L=n/2+1;L<=n;L++) fail+=fact[n]/L; return fact[n]-fail; }
+
+function build(n){
+  N=n; HALF=n/2; TOTAL=fact[n]; cache={};
+  types=partitions(N,N).map((lam,id)=>{
+    const m={}; lam.forEach(x=>m[x]=(m[x]||0)+1);
+    let z=1; const zp=[];
+    Object.keys(m).map(Number).sort((a,b)=>b-a).forEach(i=>{ z*=Math.pow(i,m[i])*fact[m[i]];
+      zp.push(i+(m[i]>1?'<sup>'+m[i]+'</sup>·'+m[i]+'!':'')); });
+    return {id,lam,key:lam.join(','),z,zstr:zp.join('·'),count:TOTAL/z,L:lam[0]};
+  });
+  typeByKey={}; types.forEach(t=>typeByKey[t.key]=t);
+  barOrder=[...types].sort((a,b)=>(b.L-a.L)||(a.id-b.id));
+
+  P=new Uint8Array(TOTAL*N); typeOf=new Uint8Array(TOTAL); longest=new Uint8Array(TOTAL);
+  const a=Array.from({length:N},(_,i)=>i+1), seen=new Uint8Array(N);
+  for(let r=0;r<TOTAL;r++){
+    for(let i=0;i<N;i++) P[r*N+i]=a[i];
+    seen.fill(0); const lens=[];
+    for(let i=0;i<N;i++){ if(seen[i]) continue; let j=i,L=0; while(!seen[j]){seen[j]=1;j=a[j]-1;L++;} lens.push(L); }
+    lens.sort((x,y)=>y-x);
+    typeOf[r]=typeByKey[lens.join(',')].id; longest[r]=lens[0];
+    let i=N-2; while(i>=0&&a[i]>a[i+1]) i--; if(i<0) break;
+    let j=N-1; while(a[j]<a[i]) j--; [a[i],a[j]]=[a[j],a[i]];
+    for(let l=i+1,rr=N-1;l<rr;l++,rr--) [a[l],a[rr]]=[a[rr],a[l]];
+  }
+  const longLs=[]; for(let L=HALF+1;L<=N;L++) longLs.push(L);
+  filters=[
+    {id:'all',label:'All permutations',test:()=>true},
+    {id:'ok',label:'Everyone free (longest ≤ '+HALF+')',test:r=>longest[r]<=HALF},
+    {id:'fail',label:'Some cycle L > '+HALF,test:r=>longest[r]>HALF},
+    ...longLs.map(L=>({id:'L'+L,label:'Cycle of length L = '+L,test:r=>longest[r]===L})),
+    ...types.map(t=>({id:'T'+t.id,label:'Cycle type ('+t.lam.join(',')+')',test:r=>typeOf[r]===t.id}))
+  ];
+  filters.forEach(f=>f.n=listFor(f.id).length);
+}
+function listFor(fid){ if(cache[fid]) return cache[fid];
+  const f=filters.find(x=>x.id===fid); const arr=[]; for(let r=0;r<TOTAL;r++) if(f.test(r)) arr.push(r);
+  return cache[fid]=Int32Array.from(arr); }
+
+/* colors: long cycles shade from L=N (darkest red); short from L=HALF (darkest green) */
+function colVar(L){ return L>HALF ? ['--f8','--f7','--f6','--f5'][N-L] : ['--ok1','--ok2','--ok3','--ok4'][HALF-L]; }
+
+const permAt=r=>Array.from(P.subarray(r*N,(r+1)*N));
+function cyclesOf(p){ const n=p.length, seen=new Array(n).fill(false), out=[];
+  for(let i=1;i<=n;i++){ if(seen[i-1]) continue; const c=[]; let j=i; while(!seen[j-1]){seen[j-1]=true;c.push(j);j=p[j-1];} out.push(c);} return out; }
+function rankOf(p){ const used=new Array(N+1).fill(false); let r=0;
+  for(let i=0;i<N;i++){ let s=0; for(let v=1;v<p[i];v++) if(!used[v]) s++; r+=s*fact[N-1-i]; used[p[i]]=true;} return r; }
+
+const state={filter:'all',page:0,per:40,selected:0,prisoner:1,opened:0,timer:null};
+
+/* ---------- n selector ---------- */
+function drawNsel(){
+  $('nsel').innerHTML=NS.map(n=>{ const s=successCount(n);
+    return '<button class="ncard'+(n===N?' sel':'')+'" role="radio" aria-checked="'+(n===N)+'" data-n="'+n+'">'+
+      '<span class="nlab">n = '+n+'</span><span class="nsub">'+(n/2)+' drawer'+(n/2>1?'s':'')+' each</span>'+
+      '<span class="nprob">'+frac(s,fact[n])+' ≈ '+(100*s/fact[n]).toFixed(2)+'%</span></button>'; }).join('')+
+    '<div class="nlimit">n → ∞: 1 − ln 2 ≈ 30.69%</div>';
+  $('nsel').querySelectorAll('button').forEach(b=>b.onclick=()=>setN(+b.dataset.n));
+}
+
+/* ---------- static text for n ---------- */
+function drawText(){
+  const S=successCount(N), F=TOTAL-S, longLs=[]; for(let L=HALF+1;L<=N;L++) longLs.push(L);
+  const Sn='S<sub>'+N+'</sub>';
+  document.title=N+' prisoners, '+HALF+' drawer'+(HALF>1?'s':'')+' each: all of S'+sub(N)+' by cycle';
+  $('h1').textContent=N+' prisoners, '+HALF+' drawer'+(HALF>1?'s':'')+' each';
+  $('lede').innerHTML='Drawer <span class="math">i</span> holds slip <span class="math">π(i)</span>. Each prisoner starts at their own drawer and follows the arrows <span class="math">i → π(i)</span>. Everyone goes free exactly when <span class="math">π ∈ </span>'+Sn+' has no cycle of length <span class="math">L &gt; '+HALF+'</span>. The bar below is all '+N+'! = '+fmt(TOTAL)+' permutations, split by cycle type.';
+  $('failBig').textContent=fmt(F);
+  $('failTxt').innerHTML='contain a cycle with <span class="math">L</span> ∈ {'+longLs.join(', ')+'}: someone fails';
+  $('okBig').textContent=fmt(S);
+  $('okTxt').textContent='longest cycle ≤ '+HALF+': all free, '+frac(S,TOTAL)+' ≈ '+(100*S/TOTAL).toFixed(3)+'%';
+  $('LHead').textContent='Permutations with a cycle of length L > '+HALF;
+  $('LNote').textContent='Count = C('+N+', L) · (L−1)! · ('+N+'−L)! = '+N+'!/L. '+
+    (N>=4?'Two cycles longer than '+HALF+' would need at least '+(N+2)+' elements, so the cases are disjoint. ':'')+'Click a row to list its permutations.';
+  $('THead').innerHTML='All '+types.length+' cycle types of '+Sn;
+  $('nfact').textContent=N+'!';
+  $('browseNote').textContent='Lexicographic order of the one-line notation π(1)π(2)…π('+N+'). Select a row to draw its graph and walk a prisoner through the drawers.';
+  $('oneHead').textContent='π(1)…π('+N+')';
+  const ex1=Array.from({length:N},(_,i)=>i+1).reverse().join('');
+  $('search').placeholder=ex1+' or (1 2)…';
+  $('graphNote').textContent='Green cycles have length ≤ '+HALF+'; red cycles are too long.';
+  $('drawers').style.gridTemplateColumns='repeat('+Math.min(N,8)+',1fr)';
+  $('err').textContent='';
+}
+
+/* ---------- hero bar ---------- */
+function drawBar(){
+  const bar=$('bar'); bar.innerHTML='';
+  barOrder.forEach(t=>{
+    const b=document.createElement('button'); b.className='seg'; b.style.flex=t.count+' 0 0';
+    b.style.background='var('+colVar(t.L)+')';
+    const lab='λ = ('+t.lam.join(',')+'): '+fmt(t.count)+' permutation'+(t.count>1?'s':'')+', '+(t.L>HALF?'fails':'all free');
+    b.setAttribute('aria-label',lab); b.title=lab; b.dataset.fid='T'+t.id;
+    b.onmouseenter=b.onfocus=()=>{$('tip').textContent=lab+' ('+(100*t.count/TOTAL).toFixed(2)+'%)';};
+    b.onclick=()=>setFilter('T'+t.id,true);
+    bar.appendChild(b);
+  });
+  $('tip').textContent='Hover a block to see its cycle type. Click it to list those permutations.';
+  const Ls=[]; for(let L=N;L>=1;L--) Ls.push(L);
+  $('legend').innerHTML=Ls.map(L=>'<span><i class="sw" style="background:var('+colVar(L)+')"></i>longest '+L+'</span>').join('');
+}
+
+/* ---------- tables ---------- */
+function drawLtable(){
+  let h='<thead><tr><th>L</th><th>C('+N+',L)</th><th>(L−1)!</th><th>('+N+'−L)!</th><th>count = '+N+'!/L</th><th>probability 1/L</th></tr></thead><tbody>';
+  let sum=0;
+  for(let L=HALF+1;L<=N;L++){
+    const c=binom(N,L)*fact[L-1]*fact[N-L]; sum+=c;
+    h+='<tr class="click" data-fid="L'+L+'"><td><span class="dot" style="background:var('+colVar(L)+')"></span>'+L+'</td><td>'+binom(N,L)+'</td><td>'+fmt(fact[L-1])+'</td><td>'+fact[N-L]+'</td><td>'+fmt(c)+'</td><td>1/'+L+' = '+(1/L).toFixed(6)+'</td></tr>';
+    const base=binom(N,L)*fact[L-1];
+    types.filter(t=>t.L===L).forEach(t=>{
+      h+='<tr class="click sub" data-fid="T'+t.id+'"><td>('+t.lam.join(',')+')</td><td colspan="3">'+fmt(base)+' L-cycles × '+(t.count/base)+' way'+(t.count/base>1?'s':'')+' for the rest</td><td>'+fmt(t.count)+'</td><td>'+(t.count/TOTAL).toFixed(6)+'</td></tr>';
+    });
+  }
+  h+='</tbody><tfoot><tr><td colspan="4">P(failure) = H'+sub(N)+' − H'+sub(HALF)+' = '+frac(sum,TOTAL)+'</td><td>'+fmt(sum)+'</td><td>'+(sum/TOTAL).toFixed(6)+'</td></tr>'+
+     '<tr><td colspan="4">P(all free) = '+frac(TOTAL-sum,TOTAL)+'</td><td>'+fmt(TOTAL-sum)+'</td><td>'+((TOTAL-sum)/TOTAL).toFixed(6)+'</td></tr></tfoot>';
+  $('Ltable').innerHTML=h;
+}
+function drawTtable(){
+  let h='<thead><tr><th>λ</th><th>z<sub>λ</sub></th><th>count</th><th>share</th><th>outcome</th></tr></thead><tbody>';
+  barOrder.forEach(t=>{
+    h+='<tr class="click" data-fid="T'+t.id+'"><td><span class="dot" style="background:var('+colVar(t.L)+')"></span>('+t.lam.join(',')+')</td><td>'+t.zstr+' = '+t.z+'</td><td>'+fmt(t.count)+'</td><td>'+(100*t.count/TOTAL).toFixed(2)+'%</td><td>'+
+       (t.L>HALF?'<span class="chip failc">'+t.L+' fail</span>':'<span class="chip okc">free</span>')+'</td></tr>';
+  });
+  h+='</tbody><tfoot><tr><td colspan="2">Total</td><td>'+fmt(TOTAL)+'</td><td>100%</td><td></td></tr></tfoot>';
+  $('Ttable').innerHTML=h;
+}
+document.addEventListener('click',e=>{ const tr=e.target.closest('tr.click'); if(tr&&tr.dataset.fid) setFilter(tr.dataset.fid,true); });
+
+/* ---------- browser ---------- */
+function fillFilterSelect(){
+  const s=$('filter');
+  s.innerHTML=filters.map(f=>'<option value="'+f.id+'">'+f.label+' ('+fmt(f.n)+')</option>').join('');
+  s.onchange=()=>setFilter(s.value,false);
+}
+function markFilter(fid){ document.querySelectorAll('[data-fid]').forEach(el=>el.classList.toggle('sel',el.dataset.fid===fid)); }
+function setFilter(fid,scroll){
+  stopPlay(); state.filter=fid; state.page=0; $('filter').value=fid;
+  const list=listFor(fid); if(list.length) select(list[0]);
+  markFilter(fid); drawPage();
+  if(scroll) $('filter').scrollIntoView({behavior:'smooth',block:'start'});
+}
+function cycleHTML(p){ return cyclesOf(p).map(c=>{ const s='('+c.join(' ')+')'; return c.length>HALF?'<span class="cycL">'+s+'</span>':s; }).join(''); }
+function drawPage(){
+  const list=listFor(state.filter), pages=Math.max(1,Math.ceil(list.length/state.per));
+  state.page=Math.min(Math.max(0,state.page),pages-1);
+  const start=state.page*state.per, end=Math.min(list.length,start+state.per);
+  let h='';
+  for(let k=start;k<end;k++){
+    const r=list[k], p=permAt(r), L=longest[r];
+    h+='<tr class="prow'+(r===state.selected?' sel':'')+'" data-r="'+r+'" tabindex="0" style="cursor:pointer"><td class="num">'+fmt(r+1)+'</td><td class="one num">'+p.join('')+'</td><td class="cyc">'+cycleHTML(p)+'</td><td>'+L+'</td><td>'+
+       (L>HALF?'<span class="chip failc">'+L+' fail</span>':'<span class="chip okc">free</span>')+'</td></tr>';
+  }
+  const tb=$('permTable').tBodies[0]; tb.innerHTML=h;
+  tb.querySelectorAll('tr.prow').forEach(tr=>{
+    const act=()=>{ select(+tr.dataset.r); tb.querySelectorAll('tr.prow').forEach(x=>x.classList.toggle('sel',x===tr)); };
+    tr.onclick=act; tr.onkeydown=e=>{ if(e.key==='Enter'||e.key===' '){e.preventDefault();act();} };
+  });
+  $('pageIn').value=state.page+1; $('pageIn').max=pages; $('pageOf').textContent='of '+fmt(pages);
+  $('showing').textContent=list.length?'Showing '+fmt(start+1)+'–'+fmt(end)+' of '+fmt(list.length):'No permutations';
+  $('first').disabled=$('prev').disabled=state.page===0;
+  $('next').disabled=$('last').disabled=state.page>=pages-1;
+}
+$('first').onclick=()=>{state.page=0;drawPage();};
+$('prev').onclick=()=>{state.page--;drawPage();};
+$('next').onclick=()=>{state.page++;drawPage();};
+$('last').onclick=()=>{state.page=1e9;drawPage();};
+$('pageIn').onchange=()=>{state.page=(parseInt($('pageIn').value,10)||1)-1;drawPage();};
+
+function parsePerm(s){
+  s=s.trim(); if(!s) return null;
+  const ok=x=>Number.isInteger(x)&&x>=1&&x<=N;
+  if(s.includes('(')){
+    const p=Array.from({length:N},(_,i)=>i+1), used=new Set();
+    const groups=s.match(/\(([^)]*)\)/g); if(!groups) return null;
+    for(const g of groups){
+      const c=g.slice(1,-1).replace(/[,\s]+/g,' ').trim(); if(!c) continue;
+      const xs=(c.includes(' ')?c.split(' '):c.split('')).map(Number);
+      for(const x of xs){ if(!ok(x)||used.has(x)) return null; used.add(x); }
+      for(let i=0;i<xs.length;i++) p[xs[i]-1]=xs[(i+1)%xs.length];
+    }
+    return p;
+  }
+  const d=s.replace(/[\s,]/g,'').split('').map(Number);
+  if(d.length!==N||new Set(d).size!==N||d.some(x=>!ok(x))) return null;
+  return d;
+}
+function jumpTo(r){
+  const list=listFor(state.filter); let k=list.indexOf(r);
+  if(k<0){ state.filter='all'; $('filter').value='all'; k=r; markFilter(''); }
+  state.page=Math.floor(k/state.per); select(r); drawPage();
+}
+$('go').onclick=()=>{ const p=parsePerm($('search').value);
+  if(!p){ $('err').textContent='Enter '+N+' distinct digits 1–'+N+' (one-line notation) or disjoint cycles like (1 2)'+(N>=4?'(3 4)':'')+'.'; return; }
+  $('err').textContent=''; jumpTo(rankOf(p)); };
+$('search').onkeydown=e=>{ if(e.key==='Enter') $('go').click(); };
+$('rand').onclick=()=>{ const list=listFor(state.filter); if(list.length) jumpTo(list[Math.floor(Math.random()*list.length)]); };
+
+/* ---------- graph ---------- */
+const SVGNS='http://www.w3.org/2000/svg';
+function el(tag,attrs,parent){ const e=document.createElementNS(SVGNS,tag);
+  for(const k in attrs){ if(k==='fill'||k==='stroke') e.style[k]=attrs[k]; else e.setAttribute(k,attrs[k]); }
+  if(parent) parent.appendChild(e); return e; }
+let edgeEls={}, nodeEls={};
+function drawGraph(p){
+  const svg=$('graph'); svg.innerHTML=''; edgeEls={}; nodeEls={};
+  const W=520, nr=15, pad=10;
+  const defs=el('defs',{},svg);
+  [['ok','--ok1'],['bad','--f7'],['hi','--hi']].forEach(([id,v])=>{
+    const m=el('marker',{id:'ar-'+id,viewBox:'0 0 10 10',refX:9,refY:5,markerWidth:7,markerHeight:7,orient:'auto-start-reverse'},defs);
+    el('path',{d:'M0,0 L10,5 L0,10 z',fill:'var('+v+')'},m);
+  });
+  const boxes=cyclesOf(p).map(c=>{ const L=c.length; const R=L===1?0:Math.max(30,L*11); const s=2*(R+nr)+2*pad+(L===1?20:0); return {c,L,R,w:s,h:s}; });
+  let x=0,y=0,rowH=0; const rows=[[]];
+  boxes.forEach(b=>{ if(x+b.w>W&&x>0){ y+=rowH; x=0; rowH=0; rows.push([]); } b.x=x; b.y=y; x+=b.w; rowH=Math.max(rowH,b.h); rows[rows.length-1].push(b); });
+  rows.forEach(row=>{ const used=row.reduce((s,b)=>s+b.w,0), off=(W-used)/2; row.forEach(b=>b.x+=off);
+    const rh=Math.max(...row.map(b=>b.h)); row.forEach(b=>b.y+=(rh-b.h)/2); });
+  svg.setAttribute('viewBox','0 0 '+W+' '+Math.max(y+rowH,120));
+  boxes.forEach(b=>{
+    const bad=b.L>HALF, col=bad?'var(--f7)':'var(--ok1)', mk=bad?'url(#ar-bad)':'url(#ar-ok)';
+    const cx=b.x+b.w/2, cy=b.y+b.h/2+(b.L===1?8:0);
+    const pos=b.c.map((v,i)=>{ const a=-Math.PI/2+2*Math.PI*i/b.L; return [cx+b.R*Math.cos(a),cy+b.R*Math.sin(a)]; });
+    const g=el('g',{},svg);
+    if(b.L===1){
+      const [px,py]=pos[0];
+      edgeEls[b.c[0]]=el('path',{'data-base':col,d:`M${px-7},${py-nr+1} C${px-22},${py-nr-26} ${px+22},${py-nr-26} ${px+7},${py-nr+1}`,fill:'none',stroke:col,'stroke-width':1.8,'marker-end':mk},g);
+    } else {
+      b.c.forEach((v,i)=>{
+        const [ax,ay]=pos[i], [bx,by]=pos[(i+1)%b.L];
+        const dx=bx-ax, dy=by-ay, ch=Math.hypot(dx,dy), k=(b.L===2?0.32:0.16)*ch;
+        const mx=(ax+bx)/2+dy/ch*k, my=(ay+by)/2-dx/ch*k;
+        const trim=(px,py,qx,qy,t)=>{ const d=Math.hypot(qx-px,qy-py); return [px+(qx-px)*t/d,py+(qy-py)*t/d]; };
+        const [sx,sy]=trim(ax,ay,mx,my,nr+1), [ex,ey]=trim(bx,by,mx,my,nr+3);
+        edgeEls[v]=el('path',{'data-base':col,d:`M${sx},${sy} Q${mx},${my} ${ex},${ey}`,fill:'none',stroke:col,'stroke-width':1.8,'marker-end':mk},g);
+      });
+    }
+    b.c.forEach((v,i)=>{
+      const [px,py]=pos[i];
+      nodeEls[v]=el('circle',{cx:px,cy:py,r:nr,fill:'var(--panel)',stroke:col,'stroke-width':2},g);
+      const t=el('text',{x:px,y:py+5,'text-anchor':'middle','font-family':'Spectral, Georgia, serif','font-size':15,'font-weight':600,fill:'var(--ink)'},g);
+      t.textContent=v;
+    });
+    const lab=el('text',{x:cx,y:b.y+b.h-2,'text-anchor':'middle','font-size':11,fill:'var(--muted)','font-family':'Public Sans, sans-serif'},g);
+    lab.textContent='length '+b.L;
+  });
+}
+
+/* ---------- prisoner walk ---------- */
+function select(r){
+  stopPlay(); state.selected=r; state.opened=0;
+  const p=permAt(r), L=longest[r], t=types[typeOf[r]];
+  $('dTitle').textContent='π = '+cyclesOf(p).map(c=>'('+c.join(' ')+')').join('');
+  $('dSub').innerHTML='Permutation #'+fmt(r+1)+' of '+fmt(TOTAL)+', one-line '+p.join('')+', cycle type ('+t.lam.join(',')+'). '+
+    (L>HALF?'The '+L+' prisoners on the long cycle fail.':'Every prisoner finds their slip within '+HALF+' opening'+(HALF>1?'s':'')+'.');
+  drawGraph(p); drawWalk();
+}
+function walkSeq(p,k){ const seq=[]; let d=k; for(let s=0;s<N;s++){ const slip=p[d-1]; seq.push([d,slip]); if(slip===k) break; d=slip; } return seq; }
+function drawPrisoners(){
+  $('prisoners').innerHTML=Array.from({length:N},(_,i)=>'<button class="btn'+(i+1===state.prisoner?' sel':'')+'" data-k="'+(i+1)+'" aria-label="Prisoner '+(i+1)+'">'+(i+1)+'</button>').join('');
+  $('prisoners').querySelectorAll('button').forEach(b=>b.onclick=()=>{ stopPlay(); state.prisoner=+b.dataset.k; state.opened=0; drawPrisoners(); drawWalk(); });
+}
+function drawWalk(){
+  const p=permAt(state.selected), k=state.prisoner, seq=walkSeq(p,k), n=state.opened;
+  const order={}; seq.slice(0,n).forEach(([d],i)=>order[d]=i+1);
+  $('drawers').innerHTML=p.map((slip,i)=>{ const d=i+1, o=order[d];
+    const cls='drawer'+(o?' open':'')+(o&&o>HALF?' late':'')+(o&&slip===k?' found':'');
+    return '<div class="'+cls+'"><div class="dl">drawer '+d+'</div><div class="sl">'+slip+'</div>'+(o?'<span class="ord">'+o+'</span>':'')+'</div>'; }).join('');
+  Object.entries(edgeEls).forEach(([v,e])=>{ const on=order[v], base=e.getAttribute('data-base');
+    e.setAttribute('stroke-width',on?3.4:1.8); e.style.stroke=on?'var(--hi)':base;
+    e.setAttribute('marker-end',on?'url(#ar-hi)':(base==='var(--f7)'?'url(#ar-bad)':'url(#ar-ok)')); });
+  Object.entries(nodeEls).forEach(([v,c])=>{ c.style.fill=+v===k?'var(--hiSoft)':'var(--panel)'; });
+  const done=n>=seq.length;
+  let msg='Prisoner '+k+' starts at drawer '+k+'. Their cycle has length '+seq.length+'.';
+  if(n>0) msg='Opened: '+seq.slice(0,n).map(([d,s])=>'drawer '+d+' → slip '+s).join(', ')+'.';
+  if(done){ msg+=' <span class="verdict" style="color:'+(seq.length<=HALF?'var(--ok1)':'var(--f7)')+'">'+
+      (seq.length<=HALF?'Found on opening '+seq.length+' of '+HALF+'. Success.':'Found only on opening '+seq.length+', past the limit of '+HALF+'. Fail.')+'</span>'; }
+  else if(n>=HALF){ msg+=' <span class="verdict" style="color:var(--f7)">All '+HALF+' opening'+(HALF>1?'s':'')+' used without finding slip '+k+'. (Continuing to show where it is.)</span>'; }
+  $('log').innerHTML=msg;
+  $('stepBtn').disabled=done;
+}
+$('stepBtn').onclick=()=>{ stopPlay(); state.opened++; drawWalk(); };
+$('resetBtn').onclick=()=>{ stopPlay(); state.opened=0; drawWalk(); };
+function stopPlay(){ if(state.timer){ clearInterval(state.timer); state.timer=null; } $('playBtn').textContent='Play walk'; }
+$('playBtn').onclick=()=>{
+  if(state.timer){ stopPlay(); return; }
+  state.opened=0; drawWalk(); $('playBtn').textContent='Pause';
+  const len=walkSeq(permAt(state.selected),state.prisoner).length;
+  state.timer=setInterval(()=>{ state.opened++; drawWalk(); if(state.opened>=len) stopPlay(); },750);
+};
+
+/* ---------- switching n ---------- */
+const EXAMPLES={8:[5,8,1,7,3,2,6,4], 6:[4,6,1,5,3,2], 4:[2,3,1,4], 2:[2,1]};
+function setN(n){
+  stopPlay(); build(n);
+  state.filter='all'; state.page=0; state.prisoner=1; state.opened=0;
+  drawNsel(); drawText(); drawBar(); drawLtable(); drawTtable(); fillFilterSelect(); drawPrisoners();
+  jumpTo(rankOf(EXAMPLES[n]));
+}
+setN(8);
+})();
+</script>
+</body>
+</html>
