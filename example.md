@@ -1,5 +1,8 @@
 2026.09.16
 
+
+* https://claude.ai/chat/0275da06-a176-4e5e-a1f2-5391e36790cd
+  
 ```
 The 100 Prisoners Riddle
 
@@ -201,5 +204,139 @@ Listing all 40,320 permutations doesn't fit in a chat reply, so I built an explo
 
 It opens on the earlier example $\pi = (1\,5\,3)(2\,8\,4\,7\,6)$, which is one of the 8,064 permutations with a 5-cycle.
 
+
+
+============
+
+# Q
+
+ Describe relevant graph and how it is related to $S_n$
+
+# A
+
+The vertices are the $n$ drawers (equivalently the prisoners), not the elements of $S_n$. Each permutation gives its own small graph.
+
+For each $\pi \in S_n$ define
+
+$$
+G_\pi = (V, E_\pi), \qquad V = [n] = \{1, \dots, n\}, \qquad E_\pi = \{\, i \to \pi(i) : i \in [n] \,\}.
+$$
+
+- **Vertices.** There are $n$ of them: drawer $i$, which is also prisoner $i$.
+- **Edges.** There are $n$ directed arcs, one leaving each drawer and pointing to the number on its slip.
+- **Structure.** Every vertex has in-degree 1 and out-degree 1 because $\pi$ is a bijection. So $G_\pi$ is a disjoint union of directed cycles, and these are exactly the cycles of $\pi$.
+  - A fixed point $\pi(i) = i$ is a loop.
+  - A 2-cycle is a pair of opposite arcs.
+- **Role of $S_n$.** It is the set of all possible graphs, one per arrangement of slips. The warden's shuffle picks one $G_\pi$ uniformly at random from $n!$ possibilities.
+
+In the app, each row of the list is one permutation, so each row is one graph $G_\pi$ on $n$ vertices. The SVG panel draws that single graph. The list itself has no edges between rows; it is just an enumeration of the sample space.
+
+The prisoners win iff the longest cycle in $G_\pi$ has length at most $n/2$. So the probability question is
+
+$$
+\Pr_{\pi \sim \mathrm{Unif}(S_n)}\bigl[\text{every cycle of } G_\pi \text{ has length} \le n/2\bigr].
+$$
+
+A graph with vertex set $S_n$ would be a different object, such as a Cayley graph $\mathrm{Cay}(S_n, T)$ for a generating set $T$. That graph plays no role in this riddle.
+
+
+
+
+
+
+
+# Q
+
+is there a holography or a similar concept allowing to solve problem using holographic duality : node <-> string.
+
+# A
+
+There's no literal holographic (AdS/CFT-style) duality that solves this riddle. There is, however, an exact node ↔ string correspondence that does solve it. It turns the cycle graph $G_\pi$ into a binary string with independent bits, and the $1/L$ law then follows from a one-line telescoping sum. Separately, physics has a real dictionary in which permutation cycles are strings.
+
+## 1. The exact duality: Foata's transformation and the Feller coupling
+
+**Step A: graph → word (Foata).** Write each cycle of $\pi$ with its largest element first. Order the cycles by increasing largest element. Then erase the parentheses to get a word $w$.
+
+This is a bijection $S_n \to S_n$. The cycles of $\pi$ correspond exactly to the blocks of $w$ that each start at a left-to-right maximum (a record).
+
+For the running example:
+
+$$
+\pi = (1\,5\,3)(2\,8\,4\,7\,6) \;\mapsto\; (5\,3\,1)(8\,4\,7\,6\,2) \;\mapsto\; w = 5\,3\,1\,8\,4\,7\,6\,2 .
+$$
+
+The records of $w$ are $5$ at position 1 and $8$ at position 4. Cutting $w$ before each record recovers the two cycles, of lengths 3 and 5.
+
+**Step B: word → binary string.** Define
+
+$$
+\xi_k = \mathbf 1\{\text{position } k \text{ of } w \text{ is a record}\}, \qquad k = 1, \dots, n,
+$$
+
+and append a sentinel $\xi_{n+1} = 1$. In the example,
+
+$$
+\xi = 1\,0\,0\,1\,0\,0\,0\,0 \mid 1 .
+$$
+
+**Dictionary.** Cycle lengths of $\pi$ are exactly the gaps between consecutive 1's in $\xi$.
+
+Since $w$ is uniform on $S_n$, Rényi's record theorem says
+
+$$
+\xi_1, \dots, \xi_n \text{ are independent}, \qquad \xi_k \sim \mathrm{Bernoulli}(1/k).
+$$
+
+This is the Feller coupling (Arratia–Barbour–Tavaré). The whole random cycle graph is encoded in a 1-D string of independent bits.
+
+**Solving the riddle on the string side.** A gap of length $L$ starting at position $i$ requires $\xi_i = 1$, then $L - 1$ zeros, then a 1 at position $i + L$. The middle factor telescopes:
+
+$$
+\prod_{k=i+1}^{i+L-1}\Bigl(1 - \tfrac1k\Bigr) = \frac{i}{i+L-1}.
+$$
+
+There are two cases:
+
+$$
+\Pr[\text{gap } (i, i+L)] =
+\begin{cases}
+\dfrac{1}{i}\cdot\dfrac{i}{i+L-1}\cdot\dfrac{1}{i+L} = \dfrac{1}{i+L-1} - \dfrac{1}{i+L}, & i + L \le n,\\[3mm]
+\dfrac{1}{i}\cdot\dfrac{i}{n}\cdot 1 = \dfrac{1}{n}, & i + L = n + 1.
+\end{cases}
+$$
+
+Summing over $i$, the first case telescopes to $\tfrac1L - \tfrac1n$, and the second adds $\tfrac1n$:
+
+$$
+\mathbb E[\#\text{gaps of length } L] = \Bigl(\frac1L - \frac1n\Bigr) + \frac1n = \frac1L .
+$$
+
+For $L > n/2$ there can be at most one such gap. So this expectation is a probability, and
+
+$$
+\Pr[\text{prisoners fail}] = \sum_{L > n/2} \frac1L = H_n - H_{n/2}.
+$$
+
+## 2. The algebraic version: the exponential formula
+
+Generating functions give the same duality. A permutation is a set of cycles, and $\exp$ converts connected structures (cycles) into sets of them (permutations). Let $p_n$ be the number of permutations of $[n]$ with all cycles of length at most $m$. Then
+
+$$
+\sum_{n \ge 0} p_n \frac{x^n}{n!} = \exp\Bigl(\sum_{k=1}^{m} \frac{x^k}{k}\Bigr).
+$$
+
+With $m = n/2$, the coefficient extraction gives the survival probability $p_n / n!$. Without the length cap, the sum is $\exp(-\ln(1-x)) = 1/(1-x)$, which just counts all $n!$ permutations.
+
+## 3. Physics: cycles as long strings
+
+In the symmetric orbifold CFT $\mathrm{Sym}^N(M)$, twisted sectors are labeled by conjugacy classes of $S_N$. A cycle of length $L$ is a single long string wound $L$ times. This is the DMVV picture (Dijkgraaf–Moore–Verlinde–Verlinde, 1997), used in AdS$_3$/CFT$_2$.
+
+In that language, the prisoners win iff no string is longer than $N/2$. The combinatorial engine behind DMVV is again the exponential formula from §2. So the analogy is faithful, but it doesn't give a new route to the answer.
+
+## 4. A name clash to avoid
+
+Valiant's holographic algorithms (Holant problems, matchgates) are a genuine counting technique based on basis changes. They aren't needed here, because this count is already elementary.
+
+For computation and intuition, §1 is the useful duality. It replaces a random graph on $n$ nodes with a string of $n$ independent coins, and turns the event "no long cycle" into "no long run of zeros between consecutive 1's."
 
 
