@@ -16,9 +16,12 @@ The stakes: If every prisoner finds their own number, all 100 go free. If even o
 The planning: Before anyone enters the room, the prisoners may discuss the challenge and agree on a strategy.
 
 What strategy gives the prisoners the best chance of all surviving—and how good are their chances?
+
+(base)  22:55 paulpaul ~/Library/Mobile Documents/com~apple~CloudDocs/code/prisoner $  pwd
+/Users/paulpaul/Library/Mobile Documents/com~apple~CloudDocs/code/prisoner
 ```
 
-
+* prisoners-dilemma https://fkhafizov.github.io/prisoners-dilemma/index.html
 * https://claude.ai/chat/0275da06-a176-4e5e-a1f2-5391e36790cd
 * https://chatgpt.com/c/6aaa1cdd-9b70-83e9-aef2-6130ef9b9009
 
